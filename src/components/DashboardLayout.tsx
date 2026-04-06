@@ -13,7 +13,19 @@ import {
   ChevronDown,
   Plus
 } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogFooter 
+} from "./ui/dialog";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import { Textarea } from "./ui/textarea";
+import { Button } from "./ui/button";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -30,6 +42,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 }) => {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isNewFileModalOpen, setIsNewFileModalOpen] = useState(false);
 
   const menuItems = [
     { id: 'dashboard', label: 'My Vault', icon: <LayoutDashboard className="w-5 h-5" /> },
@@ -162,10 +175,22 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         </div>
       </main>
 
-      {/* Global Upload FAB */}
-      <button className="fixed bottom-10 right-10 w-16 h-16 bg-blue-600 text-white rounded-[1.5rem] shadow-2xl shadow-blue-600/40 flex items-center justify-center hover:bg-blue-700 transition-all hover:scale-110 active:scale-95 group z-50">
-        <Plus className="w-8 h-8 group-hover:rotate-90 transition-transform duration-300" />
-      </button>
+      {/* Global Upload FAB with Tooltip and Modal */}
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button 
+              onClick={() => setActiveTab('add-file')}
+              className="fixed bottom-10 right-10 w-16 h-16 bg-blue-600 text-white rounded-[1.5rem] shadow-2xl shadow-blue-600/40 flex items-center justify-center hover:bg-blue-700 transition-all hover:scale-110 active:scale-95 group z-50"
+            >
+              <Plus className="w-8 h-8 group-hover:rotate-90 transition-transform duration-300" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="left" className="font-bold">
+            add new item
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     </div>
   );
 };

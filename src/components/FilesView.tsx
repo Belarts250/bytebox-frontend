@@ -12,17 +12,31 @@ import {
   Download,
   Trash2,
   ExternalLink,
-  ChevronDown
+  ChevronDown,
+  Plus
 } from 'lucide-react';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogFooter 
+} from "./ui/dialog";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import { Textarea } from "./ui/textarea";
+import { Button } from "./ui/button";
 
 interface FilesViewProps {
   type: 'documents' | 'images' | 'videos';
+  onUpload: () => void;
 }
 
-export const FilesView: React.FC<FilesViewProps> = ({ type }) => {
+export const FilesView: React.FC<FilesViewProps> = ({ type, onUpload }) => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFile, setSelectedFile] = useState<any>(null);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
   // Mock data generator
   const getMockFiles = () => {
@@ -77,6 +91,14 @@ export const FilesView: React.FC<FilesViewProps> = ({ type }) => {
             <Filter className="w-4 h-4" />
             Filter
             <ChevronDown className="w-4 h-4" />
+          </button>
+
+          <button 
+            onClick={onUpload}
+            className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 active:scale-95 whitespace-nowrap"
+          >
+            <Plus className="w-4 h-4" />
+            Upload {type === 'documents' ? 'Document' : type === 'images' ? 'Image' : 'Video'}
           </button>
         </div>
       </div>

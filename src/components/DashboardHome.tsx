@@ -10,10 +10,11 @@ import {
   Download,
   Share2,
   ShieldCheck,
-  Zap
+  Zap,
+  Plus
 } from 'lucide-react';
 
-export const DashboardHome = () => {
+export const DashboardHome = ({ onUpload }: { onUpload: () => void }) => {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
 
   const stats = [
@@ -41,6 +42,13 @@ export const DashboardHome = () => {
           <ShieldCheck className="w-5 h-5 text-green-500" />
           <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Vault status: Encrypted</span>
         </div>
+        <button 
+          onClick={onUpload}
+          className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 active:scale-95"
+        >
+          <Plus className="w-4 h-4" />
+          Quick Upload
+        </button>
       </div>
 
       {/* Stats Grid */}
