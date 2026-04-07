@@ -16,7 +16,7 @@ export default function App() {
   const [currentPage, setCurrentPage] = useState<Page>('landing');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  // Sync state when login/logout happens
+  
   const handleLoginSuccess = () => {
     setIsLoggedIn(true);
     setCurrentPage('dashboard');
