@@ -21,12 +21,43 @@ export const AddFilePage: React.FC<AddFilePageProps> = ({
     file: null as File | null
   });
 
-  const handleUpload = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Handle file upload logic here
-    console.log('Uploading file:', formData);
-    onBack(); // Navigate back after upload
-  };
+const handleUpload = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  if (!formData.file) {
+    alert("Please select a file");
+    return;
+  }
+
+  const uploadData = new FormData();
+  uploadData.append('title', formData.name);
+  uploadData.append('description', formData.description);
+  uploadData.append('file', formData.file);
+
+  try {
+    const res = await fetch('http://localhost:3000/documents/upload', {
+      method: 'POST',
+      body: uploadData,
+    });
+
+    const data = await res.json();
+    console.log("Upload success:", data);
+
+    onBack(); // go back after upload
+  } catch (err) {
+    console.error("Upload error:", err);
+  }
+};
+
+  // const formData = new FormData();
+  // formData.append('title', name);
+  // formData.append('description', description);
+  // formData.append('file', file);
+
+  // await fetch('http://localhost:3000/documents/upload',{
+  //   method: 'POST',
+  //   body: formData,
+  // })
 
   const titleText = defaultType === 'file' ? 'Add New Item' : `Add New ${defaultType.charAt(0).toUpperCase() + defaultType.slice(1)}`;
 
