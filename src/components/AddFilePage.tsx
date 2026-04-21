@@ -26,6 +26,7 @@ const handleUpload = async (e: React.FormEvent) => {
 
   if (!formData.file) {
     alert("Please select a file");
+    console.log("UPLOAD CLICKED");
     return;
   }
 
@@ -35,7 +36,7 @@ const handleUpload = async (e: React.FormEvent) => {
   uploadData.append('file', formData.file);
 
   try {
-    const res = await fetch('http://localhost:3000/documents/upload', {
+    const res = await fetch('http://localhost:5000/documents/upload', {
       method: 'POST',
       body: uploadData,
     });
@@ -145,6 +146,7 @@ const handleUpload = async (e: React.FormEvent) => {
                 </Button>
                 <Button 
                   type="submit"
+                  
                   className="px-12 py-5 bg-blue-600 text-white rounded-2xl font-black shadow-xl shadow-blue-600/20 hover:bg-blue-700 hover:scale-105 transition-all flex items-center gap-3 h-14 text-lg"
                 >
                   <Save className="w-5 h-5" />

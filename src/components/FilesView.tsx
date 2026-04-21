@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   FileText, 
@@ -38,21 +38,34 @@ export const FilesView: React.FC<FilesViewProps> = ({ type, onUpload }) => {
   const [selectedFile, setSelectedFile] = useState<any>(null);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
-  // Mock data generator
-  const getMockFiles = () => {
-    const baseFiles = [
-      { id: 1, name: 'Project_Proposal_2025.pdf', type: 'documents', ext: 'PDF', size: '1.2 MB', date: 'Jan 25, 2026', color: 'text-red-500' },
-      { id: 2, name: 'Quarterly_Review.docx', type: 'documents', ext: 'DOCX', size: '850 KB', date: 'Jan 24, 2026', color: 'text-blue-500' },
-      { id: 3, name: 'Brand_Guidelines_v1.pdf', type: 'documents', ext: 'PDF', size: '15.4 MB', date: 'Jan 20, 2026', color: 'text-red-500' },
-      { id: 4, name: 'Hero_Banner_Main.png', type: 'images', ext: 'PNG', size: '4.5 MB', date: 'Jan 28, 2026', color: 'text-emerald-500' },
-      { id: 5, name: 'Team_Lunch.jpg', type: 'images', ext: 'JPG', size: '2.1 MB', date: 'Jan 27, 2026', color: 'text-emerald-500' },
-      { id: 6, name: 'Product_Launch_Event.mp4', type: 'videos', ext: 'MP4', size: '450 MB', date: 'Jan 15, 2026', color: 'text-purple-500' },
-      { id: 7, name: 'App_Tutorial_v2.mp4', type: 'videos', ext: 'MP4', size: '82 MB', date: 'Jan 12, 2026', color: 'text-purple-500' },
-    ];
-    return baseFiles.filter(f => f.type === type);
-  };
+  // Mock data - replace with real API data
+  const [files, setFiles] = useState<any[]>([]);
+  const [ loading, setLoading ] = useState(true);
 
-  const files = getMockFiles().filter(f => f.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  useEffect(() => {
+    const fetchFiles = async () => {
+      try{
+        setLoading(true)
+        const token = localStorage.getItem("token");
+        const res = await fetch(`http://localhost:5000/${type}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const data = await res.json();
+        setFiles(data);
+      } catch (error) {
+        console.error('Error fetching files:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFiles();
+  }, [type]);
+
+  const filteredFiles = files.filter((f)=>    f.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const FileIcon = ({ type, color }: { type: string, color: string }) => {
     switch(type) {
@@ -62,6 +75,22 @@ export const FilesView: React.FC<FilesViewProps> = ({ type, onUpload }) => {
       default: return <FileText className={color} />;
     }
   };
+
+  const deleteFile = async (id: string) => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`http://localhost:5000/${type}/${id}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      // Remove the deleted file from the state
+      setFiles(files.filter((f) => f.id !== id));
+    } catch (error) {
+      console.error('Error deleting file:', error);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -114,109 +143,76 @@ export const FilesView: React.FC<FilesViewProps> = ({ type, onUpload }) => {
         />
       </div>
 
-      {files.length === 0 ? (
-        <div className="py-32 text-center">
-          <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Search className="w-10 h-10 text-slate-300" />
-          </div>
-          <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">No files found</h3>
-          <p className="text-slate-500 dark:text-slate-400">Try adjusting your search or upload something new.</p>
-        </div>
+            {/* LOADING */}
+      {loading ? (
+        <p className="text-gray-500">Loading files...</p>
+      ) : filteredFiles.length === 0 ? (
+        <p className="text-gray-500">No files found</p>
       ) : (
-        <div className={viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6' : 'space-y-3'}>
-          {files.map((file) => (
-            <motion.div 
-              layout
+        <div className={viewMode === 'grid' ? 'grid grid-cols-3 gap-4' : 'space-y-2'}>
+
+          {filteredFiles.map((file) => (
+            <motion.div
               key={file.id}
-              whileHover={{ y: -4 }}
-              className={`bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 group transition-all shadow-sm
-                ${viewMode === 'grid' ? 'rounded-[2rem] p-6' : 'rounded-2xl p-4 flex items-center justify-between'}
-              `}
+              className="border p-4 rounded-xl bg-white shadow-sm flex justify-between items-center"
+              whileHover={{ scale: 1.02 }}
             >
-              <div className={`flex items-center gap-4 ${viewMode === 'grid' ? 'flex-col items-start' : ''}`}>
-                <div className={`rounded-2xl flex items-center justify-center ${viewMode === 'grid' ? 'w-full aspect-square bg-slate-50 dark:bg-slate-800 mb-4' : 'w-12 h-12 bg-slate-50 dark:bg-slate-800'}`}>
-                  <FileIcon type={type} color={file.color + (viewMode === 'grid' ? ' w-12 h-12' : ' w-6 h-6')} />
-                </div>
+
+              {/* LEFT SIDE */}
+              <div className="flex items-center gap-3">
+                <FileIcon type={type} color='text-blue-500' />
                 <div>
-                  <h4 className="font-bold text-slate-900 dark:text-white text-sm group-hover:text-blue-600 transition-colors line-clamp-1">{file.name}</h4>
-                  <p className="text-xs text-slate-400 font-medium">{file.ext} • {file.size} • {file.date}</p>
+                  <h3 className="font-semibold">{file.name}</h3>
+                  <p className="text-xs text-gray-500">
+                    {file.size} • {file.date}
+                  </p>
                 </div>
               </div>
 
-              <div className={`flex items-center gap-2 ${viewMode === 'grid' ? 'mt-6 pt-4 border-t border-slate-50 dark:border-slate-800 w-full justify-between' : ''}`}>
-                <button 
-                  onClick={() => setSelectedFile(file)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                  View
+              {/* ACTIONS */}
+              <div className="flex gap-2">
+                <button onClick={() => setSelectedFile(file)}>
+                  <ExternalLink size={18} />
                 </button>
-                <div className="flex gap-1">
-                  <button className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><Download className="w-4 h-4" /></button>
-                  <button className="p-1.5 text-slate-400 hover:text-red-600 transition-colors"><Trash2 className="w-4 h-4" /></button>
-                  <button className="p-1.5 text-slate-400 hover:text-slate-600"><MoreVertical className="w-4 h-4" /></button>
-                </div>
+
+                <button>
+                  <Download size={18} />
+                </button>
+
+                <button onClick={() => deleteFile(file.id)}>
+                  <Trash2 size={18} className="text-red-500" />
+                </button>
+
+                <MoreVertical size={18} />
               </div>
+
             </motion.div>
           ))}
+
         </div>
       )}
 
-      {/* File Preview Modal */}
+      {/* FILE MODAL */}
       <AnimatePresence>
         {selectedFile && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setSelectedFile(null)}
-              className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
-            />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-white dark:bg-slate-900 w-full max-w-4xl rounded-[2.5rem] shadow-2xl overflow-hidden relative z-10 flex flex-col md:flex-row"
-            >
-              <div className="flex-1 bg-slate-100 dark:bg-slate-950 flex items-center justify-center p-8 min-h-[400px]">
-                 <FileIcon type={type} color={`${selectedFile.color} w-32 h-32 opacity-20`} />
-              </div>
-              <div className="w-full md:w-80 p-8 flex flex-col justify-between">
-                <div>
-                  <div className="flex justify-between items-start mb-6">
-                    <h3 className="text-xl font-bold text-slate-900 dark:text-white leading-tight">{selectedFile.name}</h3>
-                    <button onClick={() => setSelectedFile(null)} className="p-2 -mr-2 text-slate-400 hover:text-slate-600 transition-colors">
-                      <ChevronDown className="w-6 h-6 rotate-90" />
-                    </button>
-                  </div>
-                  <div className="space-y-4 mb-8">
-                    <div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Details</p>
-                      <div className="grid grid-cols-2 gap-y-2 text-sm">
-                        <span className="text-slate-500">Size</span>
-                        <span className="font-bold text-slate-900 dark:text-white text-right">{selectedFile.size}</span>
-                        <span className="text-slate-500">Format</span>
-                        <span className="font-bold text-slate-900 dark:text-white text-right">{selectedFile.ext}</span>
-                        <span className="text-slate-500">Created</span>
-                        <span className="font-bold text-slate-900 dark:text-white text-right">{selectedFile.date}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  <button className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20">
-                    <Download className="w-4 h-4" /> Download File
-                  </button>
-                  <button className="w-full py-3 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl font-bold border border-slate-100 dark:border-slate-800">
-                    Share Link
-                  </button>
-                </div>
-              </div>
-            </motion.div>
+          <div className="fixed inset-0 bg-black/50 flex justify-center items-center">
+            <div className="bg-white p-6 rounded-xl w-[400px]">
+              <h2 className="font-bold text-lg">{selectedFile.name}</h2>
+              <p className="text-sm text-gray-500 mt-2">
+                Size: {selectedFile.size}
+              </p>
+
+              <button
+                onClick={() => setSelectedFile(null)}
+                className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-xl"
+              >
+                Close
+              </button>
+            </div>
           </div>
         )}
       </AnimatePresence>
+
     </div>
   );
 };
