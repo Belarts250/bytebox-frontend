@@ -26,25 +26,27 @@ const handleUpload = async (e: React.FormEvent) => {
 
   if (!formData.file) {
     alert("Please select a file");
-    console.log("UPLOAD CLICKED");
     return;
   }
 
   const uploadData = new FormData();
-  uploadData.append('title', formData.name);
-  uploadData.append('description', formData.description);
-  uploadData.append('file', formData.file);
+  uploadData.append("title", formData.name);
+  uploadData.append("description", formData.description);
+  uploadData.append("file", formData.file);
+
+  // 🔥 IMPORTANT: send type
+  uploadData.append("type", defaultType);
 
   try {
-    const res = await fetch('http://localhost:5000/documents/upload', {
-      method: 'POST',
+    const res = await fetch("http://localhost:5000/documents/upload", {
+      method: "POST",
       body: uploadData,
     });
 
     const data = await res.json();
     console.log("Upload success:", data);
 
-    onBack(); // go back after upload
+    onBack(); // triggers refresh
   } catch (err) {
     console.error("Upload error:", err);
   }
