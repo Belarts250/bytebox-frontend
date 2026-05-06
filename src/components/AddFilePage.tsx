@@ -40,6 +40,9 @@ const handleUpload = async (e: React.FormEvent) => {
   try {
     const res = await fetch("http://localhost:5000/documents/upload", {
       method: "POST",
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },  
       body: uploadData,
     });
 

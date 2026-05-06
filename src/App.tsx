@@ -71,7 +71,7 @@ export default function App() {
       case 'add-file':
         return (
           <AddFilePage
-            defaultType="file"
+            // defaultType="file"
             onBack={() => {
               setCurrentPage('documents'); // go back to list
               refreshFiles();              // 🔥 refresh data
