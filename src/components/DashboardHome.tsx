@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import {
   FileText,
@@ -6,7 +6,6 @@ import {
   Video,
   HardDrive,
   ArrowUpRight,
-  MoreVertical,
   Download,
   Share2,
   ShieldCheck,
@@ -15,21 +14,83 @@ import {
 } from 'lucide-react';
 
 export const DashboardHome = ({ onUpload }: { onUpload: () => void }) => {
+  const [statsData, setStatsData] = useState<any>(null);
+  const [recentFiles, setRecentFiles] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  
   const user = JSON.parse(localStorage.getItem("user") || "{}");
 
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+      const headers = { Authorization: `Bearer ${token}` };
+
+      const [statsRes, filesRes] = await Promise.all([
+        fetch('http://localhost:5000/documents/stats', { headers }),
+        fetch('http://localhost:5000/documents', { headers })
+      ]);
+
+      const stats = await statsRes.json();
+      const files = await filesRes.json();
+
+      setStatsData(stats);
+      setRecentFiles(Array.isArray(files) ? files.slice(0, 4) : []);
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
   const stats = [
-    { label: 'Documents', count: '124', size: '1.2 GB', color: 'bg-blue-500', icon: <FileText className="w-5 h-5 text-white" /> },
-    { label: 'Images', count: '452', size: '2.8 GB', color: 'bg-emerald-500', icon: <ImageIcon className="w-5 h-5 text-white" /> },
-    { label: 'Videos', count: '12', size: '1.5 GB', color: 'bg-amber-500', icon: <Video className="w-5 h-5 text-white" /> },
-    { label: 'Cloud Space', count: '18%', size: '5.5 / 30 GB', color: 'bg-indigo-500', icon: <HardDrive className="w-5 h-5 text-white" /> },
+    { 
+      label: 'Documents', 
+      count: statsData?.documents?.count || 0, 
+      size: formatSize(statsData?.documents?.size || 0), 
+      color: 'bg-blue-500', 
+      icon: <FileText className="w-5 h-5 text-white" /> 
+    },
+    { 
+      label: 'Images', 
+      count: statsData?.images?.count || 0, 
+      size: formatSize(statsData?.images?.size || 0), 
+      color: 'bg-emerald-500', 
+      icon: <ImageIcon className="w-5 h-5 text-white" /> 
+    },
+    { 
+      label: 'Videos', 
+      count: statsData?.videos?.count || 0, 
+      size: formatSize(statsData?.videos?.size || 0), 
+      color: 'bg-amber-500', 
+      icon: <Video className="w-5 h-5 text-white" /> 
+    },
+    { 
+      label: 'Cloud Space', 
+      count: statsData ? `${Math.min(100, Math.round((statsData.totalSize / (30 * 1024 * 1024 * 1024)) * 100))}%` : '0%', 
+      size: `${formatSize(statsData?.totalSize || 0)} / 30 GB`, 
+      color: 'bg-indigo-500', 
+      icon: <HardDrive className="w-5 h-5 text-white" /> 
+    },
   ];
 
-  const recentFiles = [
-    { name: 'Passport_Copy.pdf', type: 'PDF', date: 'Just now', size: '1.2 MB', icon: <FileText className="text-red-500" /> },
-    { name: 'House_Contract_Signed.pdf', type: 'PDF', date: '3 hours ago', size: '4.5 MB', icon: <FileText className="text-red-500" /> },
-    { name: 'Vacation_Photo_01.jpg', type: 'JPG', date: 'Yesterday', size: '3.2 MB', icon: <ImageIcon className="text-emerald-500" /> },
-    { name: 'Birthday_Greeting.mp4', type: 'MP4', date: 'Jan 28, 2026', size: '12.8 MB', icon: <Video className="text-purple-500" /> },
-  ];
+  const getFileIcon = (type: string) => {
+    if (type === 'image') return <ImageIcon className="text-emerald-500" />;
+    if (type === 'video') return <Video className="text-purple-500" />;
+    return <FileText className="text-red-500" />;
+  };
 
   return (
     <div className="space-y-12">
@@ -88,30 +149,36 @@ export const DashboardHome = ({ onUpload }: { onUpload: () => void }) => {
 
           <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 overflow-hidden shadow-sm">
             <div className="divide-y divide-slate-50 dark:divide-slate-800/50">
-              {recentFiles.map((file, i) => (
-                <div key={i} className="p-6 flex items-center justify-between hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors group">
-                  <div className="flex items-center gap-5">
-                    <div className="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center group-hover:bg-white dark:group-hover:bg-slate-700 transition-colors shadow-sm">
-                      {file.icon}
+              {loading ? (
+                <div className="p-10 text-center text-slate-400 font-bold">Loading your secure items...</div>
+              ) : recentFiles.length === 0 ? (
+                <div className="p-10 text-center text-slate-400 font-bold">No items found. Start by uploading one!</div>
+              ) : (
+                recentFiles.map((file, i) => (
+                  <div key={i} className="p-6 flex items-center justify-between hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors group">
+                    <div className="flex items-center gap-5">
+                      <div className="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center group-hover:bg-white dark:group-hover:bg-slate-700 transition-colors shadow-sm">
+                        {getFileIcon(file.type)}
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-slate-900 dark:text-white text-base group-hover:text-blue-600 transition-colors">{file.title}</h4>
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{file.fileType.split('/')[1].toUpperCase()} • {formatSize(file.fileSize)}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="font-bold text-slate-900 dark:text-white text-base group-hover:text-blue-600 transition-colors">{file.name}</h4>
-                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{file.type} • {file.size}</p>
+                    <div className="flex items-center gap-6">
+                      <span className="text-sm font-bold text-slate-400">{new Date(file.uploadedAt).toLocaleDateString()}</span>
+                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button className="p-2.5 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700">
+                          <Download className="w-4 h-4" />
+                        </button>
+                        <button className="p-2.5 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700">
+                          <Share2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-6">
-                    <span className="text-sm font-bold text-slate-400">{file.date}</span>
-                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button className="p-2.5 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700">
-                        <Download className="w-4 h-4" />
-                      </button>
-                      <button className="p-2.5 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700">
-                        <Share2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </div>
